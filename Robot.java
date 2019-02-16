@@ -1,4 +1,4 @@
-// 2/15/19
+// 2/15/2019
 package frc.robot;
 
 import edu.wpi.first.wpilibj.*;
@@ -103,6 +103,8 @@ public class Robot extends TimedRobot {
     BL.set(ControlMode.PercentOutput, driveStick.getRawAxis(1));
 
     //Disc Mech
+
+    //Right is 1, Left is 0.
     while (driveStick.getRawButton(5)) {
       leftServo.setAngle(80);
       rightServo.setAngle(143);
@@ -113,6 +115,7 @@ public class Robot extends TimedRobot {
     }
 
     //Ball Mech
+
     if (mechValue1 > 0) {
       ballMech.set(ControlMode.PercentOutput, (0.5)*(mechValue1*mechValue1));
       
