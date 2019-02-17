@@ -1,4 +1,4 @@
-// February 17, 2019
+// February 17, 2019, with very good vision code.
 package frc.robot;
 
 import edu.wpi.first.wpilibj.*;
@@ -23,7 +23,7 @@ public class Robot extends TimedRobot {
   private boolean connected = false;
   private boolean waiting = false;
   private double motorSpeed = 0;
-  private double autoTurn = 0.3;
+  private double autoTurn = 0.05;
   public static SerialPort serialPort;
 
   public void semiAuto()
@@ -37,48 +37,47 @@ public class Robot extends TimedRobot {
    {
      command = serialPort.readString(1);
      motorSpeed = (-driveStick.getRawAxis(1) / 3);
+     double strongSide = motorSpeed + autoTurn;
+     double weakSide = motorSpeed;
 
      if (command.equals("R"))
      {
        DriverStation.reportWarning(command, false);
-       FL.set(ControlMode.PercentOutput, (motorSpeed + autoTurn));
-       BL.set(ControlMode.PercentOutput, (motorSpeed + autoTurn));
-       FR.set(ControlMode.PercentOutput, motorSpeed);
-       BR.set(ControlMode.PercentOutput, motorSpeed);
+       FL.set(ControlMode.PercentOutput, -strongSide);
+       BL.set(ControlMode.PercentOutput, -strongSide);
+       FR.set(ControlMode.PercentOutput, -weakSide);
+       BR.set(ControlMode.PercentOutput, -weakSide);
        waiting = false;
      }
      else if (command.equals("L"))
      {
        DriverStation.reportWarning(command, false);
-       FL.set(ControlMode.PercentOutput, motorSpeed);
-       BL.set(ControlMode.PercentOutput, motorSpeed);
-       FR.set(ControlMode.PercentOutput, (motorSpeed + autoTurn));
-       BR.set(ControlMode.PercentOutput, (motorSpeed + autoTurn));
+       FL.set(ControlMode.PercentOutput, -weakSide);
+       BL.set(ControlMode.PercentOutput, -weakSide);
+       FR.set(ControlMode.PercentOutput, -strongSide);
+       BR.set(ControlMode.PercentOutput, -strongSide);
        waiting = false;
      }
      else if (command.equals("C"))
      {
        DriverStation.reportWarning(command, false);
-       FL.set(ControlMode.PercentOutput, motorSpeed);
-       BL.set(ControlMode.PercentOutput, motorSpeed);
-       FR.set(ControlMode.PercentOutput, motorSpeed);
-       BR.set(ControlMode.PercentOutput, motorSpeed);
+       FL.set(ControlMode.PercentOutput, -weakSide);
+       BL.set(ControlMode.PercentOutput, -weakSide);
+       FR.set(ControlMode.PercentOutput, -weakSide);
+       BR.set(ControlMode.PercentOutput, -weakSide);
        waiting = false;
      }
      else if (command.equals("X"))
      {
        DriverStation.reportWarning(command, false);
-       FL.set(ControlMode.PercentOutput, motorSpeed);
-       BL.set(ControlMode.PercentOutput, motorSpeed);
-       FR.set(ControlMode.PercentOutput, motorSpeed);
-       BR.set(ControlMode.PercentOutput, motorSpeed);
+       FL.set(ControlMode.PercentOutput, driveStick.getRawAxis(1) / 2);
+       BL.set(ControlMode.PercentOutput, driveStick.getRawAxis(1) / 2);
+       FR.set(ControlMode.PercentOutput, driveStick.getRawAxis(1) / 2);
+       BR.set(ControlMode.PercentOutput, driveStick.getRawAxis(1) / 2);
        waiting = false;
      }
    }
  }
-
-
-
 
   @Override
   public void robotInit() {
@@ -111,16 +110,23 @@ public class Robot extends TimedRobot {
 
   @Override
   public void teleopPeriodic() { 
+    if (driveStick.getRawButton(4) && connected == true) {
+      semiAuto();
+    }
+
     double mechValue = driveStick.getRawAxis(2);
 		double mechValue1 = driveStick.getRawAxis(3);
 
     //Tank Drive
     FL.setInverted(true);
     BL.setInverted(true);
-    FR.set(ControlMode.PercentOutput, driveStick.getRawAxis(5) * java.lang.Math.abs(driveStick.getRawAxis(5)));
-    BR.set(ControlMode.PercentOutput, driveStick.getRawAxis(5) * java.lang.Math.abs(driveStick.getRawAxis(5)));
-    FL.set(ControlMode.PercentOutput, driveStick.getRawAxis(1) * java.lang.Math.abs(driveStick.getRawAxis(1)));
-    BL.set(ControlMode.PercentOutput, driveStick.getRawAxis(1) * java.lang.Math.abs(driveStick.getRawAxis(1)));
+    if (!driveStick.getRawButton(4)) {
+      FR.set(ControlMode.PercentOutput, driveStick.getRawAxis(5) * java.lang.Math.abs(driveStick.getRawAxis(5)));
+      BR.set(ControlMode.PercentOutput, driveStick.getRawAxis(5) * java.lang.Math.abs(driveStick.getRawAxis(5)));
+      FL.set(ControlMode.PercentOutput, driveStick.getRawAxis(1) * java.lang.Math.abs(driveStick.getRawAxis(1)));
+      BL.set(ControlMode.PercentOutput, driveStick.getRawAxis(1) * java.lang.Math.abs(driveStick.getRawAxis(1)));
+    
+    }
     
 
     //Disc Mech
