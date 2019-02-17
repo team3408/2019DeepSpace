@@ -1,14 +1,13 @@
-// 2/15/2019
+// February 17, 2019
 package frc.robot;
 
 import edu.wpi.first.wpilibj.*;
+import edu.wpi.first.wpilibj.SerialPort;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.can.*;
-//import edu.wpi.first.wpilibj.smartdashboard.*;
 
 public class Robot extends TimedRobot {
-  public static SerialPort mySerialPort;
   Joystick driveStick = new Joystick(0);
   Joystick mechStick = new Joystick(1);
   TalonSRX FL = new TalonSRX(3);
@@ -16,29 +15,84 @@ public class Robot extends TimedRobot {
   TalonSRX FR = new TalonSRX(0);
   TalonSRX BR = new TalonSRX(1);
   TalonSRX ballMech = new TalonSRX(4);
-  TalonSRX lift1 = new TalonSRX(5);
-  TalonSRX lift2 = new TalonSRX(6);
+  TalonSRX lift = new TalonSRX(5);
+  TalonSRX extra = new TalonSRX(6);
   Servo leftServo = new Servo(0);
   Servo rightServo = new Servo(1);
-  String command;
-  boolean connected = false;
-
+  private String command;
+  private boolean connected = false;
+  private boolean waiting = false;
+  private double motorSpeed = 0;
+  private double autoTurn = 0.3;
   public static SerialPort serialPort;
- // SmartDashboard dashboard;
+
+  public void semiAuto()
+ {
+   serialPort.writeString("I");
+
+   command = "";
+   waiting = true;
+
+   while(waiting)
+   {
+     command = serialPort.readString(1);
+     motorSpeed = (-driveStick.getRawAxis(1) / 3);
+
+     if (command.equals("R"))
+     {
+       DriverStation.reportWarning(command, false);
+       FL.set(ControlMode.PercentOutput, (motorSpeed + autoTurn));
+       BL.set(ControlMode.PercentOutput, (motorSpeed + autoTurn));
+       FR.set(ControlMode.PercentOutput, motorSpeed);
+       BR.set(ControlMode.PercentOutput, motorSpeed);
+       waiting = false;
+     }
+     else if (command.equals("L"))
+     {
+       DriverStation.reportWarning(command, false);
+       FL.set(ControlMode.PercentOutput, motorSpeed);
+       BL.set(ControlMode.PercentOutput, motorSpeed);
+       FR.set(ControlMode.PercentOutput, (motorSpeed + autoTurn));
+       BR.set(ControlMode.PercentOutput, (motorSpeed + autoTurn));
+       waiting = false;
+     }
+     else if (command.equals("C"))
+     {
+       DriverStation.reportWarning(command, false);
+       FL.set(ControlMode.PercentOutput, motorSpeed);
+       BL.set(ControlMode.PercentOutput, motorSpeed);
+       FR.set(ControlMode.PercentOutput, motorSpeed);
+       BR.set(ControlMode.PercentOutput, motorSpeed);
+       waiting = false;
+     }
+     else if (command.equals("X"))
+     {
+       DriverStation.reportWarning(command, false);
+       FL.set(ControlMode.PercentOutput, motorSpeed);
+       BL.set(ControlMode.PercentOutput, motorSpeed);
+       FR.set(ControlMode.PercentOutput, motorSpeed);
+       BR.set(ControlMode.PercentOutput, motorSpeed);
+       waiting = false;
+     }
+   }
+ }
+
+
+
 
   @Override
   public void robotInit() {
-   /* try {
-      mySerialPort = new SerialPort(115200, SerialPort.Port.kMXP);
-      mySerialPort.setTimeout(0.8);
-      connected = true; //?
-    }  
-
-    catch (Exception e) {
-      DriverStation.getInstance();
-      DriverStation.reportWarning("Cannot connect to arduino :(", false);
-    }
-    */
+    try
+   {
+     serialPort = new SerialPort(115200, SerialPort.Port.kMXP);
+     serialPort.setTimeout(0.8);
+     connected = true;
+   }
+   catch (Exception e)
+   {
+     DriverStation.getInstance();
+     DriverStation.reportWarning("Can't Connect to RioDiuno", false);
+   }
   }
 
   @Override
@@ -59,48 +113,15 @@ public class Robot extends TimedRobot {
   public void teleopPeriodic() { 
     double mechValue = driveStick.getRawAxis(2);
 		double mechValue1 = driveStick.getRawAxis(3);
-    
-    //Vision
-    /*
-    while(driveStick.getRawButton(4) && connected)
-    {
-      command = serialPort.readString(1);
-
-      DriverStation.getInstance();
-      DriverStation.reportWarning(serialPort.readString(1), false);
-
-      if (command.equals("R"))
-      {
-        FL.set(ControlMode.PercentOutput, 0.4);
-        BL.set(ControlMode.PercentOutput, 0.4);
-      }
-
-      else
-      {
-        break;
-      }
-
-      if (command.equals("L"))
-      {
-        FR.set(ControlMode.PercentOutput, 0.4);
-        BR.set(ControlMode.PercentOutput, 0.4);
-      }
-
-      else
-      {
-        break;
-      }
-
-    }
-    */
 
     //Tank Drive
     FL.setInverted(true);
     BL.setInverted(true);
-    FR.set(ControlMode.PercentOutput, driveStick.getRawAxis(5));
-    BR.set(ControlMode.PercentOutput, driveStick.getRawAxis(5));
-    FL.set(ControlMode.PercentOutput, driveStick.getRawAxis(1));
-    BL.set(ControlMode.PercentOutput, driveStick.getRawAxis(1));
+    FR.set(ControlMode.PercentOutput, driveStick.getRawAxis(5) * java.lang.Math.abs(driveStick.getRawAxis(5)));
+    BR.set(ControlMode.PercentOutput, driveStick.getRawAxis(5) * java.lang.Math.abs(driveStick.getRawAxis(5)));
+    FL.set(ControlMode.PercentOutput, driveStick.getRawAxis(1) * java.lang.Math.abs(driveStick.getRawAxis(1)));
+    BL.set(ControlMode.PercentOutput, driveStick.getRawAxis(1) * java.lang.Math.abs(driveStick.getRawAxis(1)));
+    
 
     //Disc Mech
 
@@ -130,14 +151,25 @@ public class Robot extends TimedRobot {
       }
   
     //Lift Mech
-    while (mechStick.getRawButton(1)) {
-      
+    //while((mechStick.getRawAxis(1) > 0.1) || (mechStick.getRawAxis(1) < -0.1))
+    //{
+     // lift.set(ControlMode.PercentOutput, mechStick.getRawAxis(1));
+    //}
+
+    if((mechStick.getRawAxis(1)) > 0 && (mechStick.getRawAxis(1) <= 0.1) || (mechStick.getRawAxis(1)) < 0 && (mechStick.getRawAxis(1) >= -0.1))
+    {
+      lift.set(ControlMode.PercentOutput, 0);
     }
 
-  }
+    else
+    {
+      lift.set(ControlMode.PercentOutput, mechStick.getRawAxis(1));
+    }
 
+    }
   @Override
   public void testPeriodic() {
+
   }
 
   
