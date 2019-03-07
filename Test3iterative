@@ -113,7 +113,7 @@ public class Robot extends TimedRobot {
      DriverStation.getInstance();
      DriverStation.reportWarning("Can't Connect to RioDiuno", false);
    }
-   CameraServer.getInstance().startAutomaticCapture().setResolution(10, 10);
+   CameraServer.getInstance().startAutomaticCapture();
   }
 
   @Override
@@ -135,7 +135,7 @@ public class Robot extends TimedRobot {
 
   @Override
   public void teleopPeriodic() { 
-    CameraServer.getInstance().startAutomaticCapture();
+    //CameraServer.getInstance().startAutomaticCapture();
     pulseWidth = lift.getSensorCollection().getPulseWidthPosition();
     smartDashboard.putNumber("Number", pulseWidth);
     if (driveStick.getRawButton(4) && connected == true) { // If 'Y' is pressed...
