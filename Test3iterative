@@ -8,10 +8,12 @@ import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.FeedbackDevice;
 import com.ctre.phoenix.motorcontrol.can.*;
 import edu.wpi.first.wpilibj.smartdashboard.*;
+import edu.wpi.first.cameraserver.CameraServer;
 
 public class Robot extends TimedRobot {
   // Instantiation
   SmartDashboard smartDashboard;
+  CameraServer camera;
   Joystick driveStick = new Joystick(0);
   Joystick mechStick = new Joystick(1);
   // Tank Drive
@@ -111,6 +113,7 @@ public class Robot extends TimedRobot {
      DriverStation.getInstance();
      DriverStation.reportWarning("Can't Connect to RioDiuno", false);
    }
+   CameraServer.getInstance().startAutomaticCapture().setResolution(10, 10);
   }
 
   @Override
@@ -132,6 +135,7 @@ public class Robot extends TimedRobot {
 
   @Override
   public void teleopPeriodic() { 
+    CameraServer.getInstance().startAutomaticCapture();
     pulseWidth = lift.getSensorCollection().getPulseWidthPosition();
     smartDashboard.putNumber("Number", pulseWidth);
     if (driveStick.getRawButton(4) && connected == true) { // If 'Y' is pressed...
@@ -155,7 +159,13 @@ public class Robot extends TimedRobot {
       FL.set(ControlMode.PercentOutput, Math.pow(driveStick.getRawAxis(1), 3) * 0.75); //* Math.abs(driveStick.getRawAxis(1)));
       BL.set(ControlMode.PercentOutput, Math.pow(driveStick.getRawAxis(1), 3) * 0.75); //* Math.abs(driveStick.getRawAxis(1)));
     }
-    
+    if(driveStick.getRawButton(3))
+    {
+      FL.set(ControlMode.PercentOutput, driveStick.getRawAxis(1) / 2);
+       BL.set(ControlMode.PercentOutput, driveStick.getRawAxis(1) / 2);
+       FR.set(ControlMode.PercentOutput, driveStick.getRawAxis(1) / 2);
+       BR.set(ControlMode.PercentOutput, driveStick.getRawAxis(1) / 2);
+    }
     //Servo code
     //Right is 1, Left is 0.
     while (mechStick.getRawButton(6)) {
