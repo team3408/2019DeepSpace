@@ -51,6 +51,6 @@ void loop()
 
   if (Serial.readString().equals("I"))
   {
-    Serial.println(distanceFromCenter);
+    Serial.print(command);
   }
 }
