@@ -1,0 +1,86 @@
+package frc.robot;
+
+import edu.wpi.first.wpilibj.*;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+
+import com.ctre.phoenix.motorcontrol.can.*;
+import com.ctre.phoenix.motorcontrol.ControlMode;
+import com.ctre.phoenix.motorcontrol.FeedbackDevice;
+
+public class Robot extends TimedRobot {
+    SmartDashboard smartDashboard;
+    TalonSRX FL = new TalonSRX(0);
+    TalonSRX BL = new TalonSRX(1);
+    TalonSRX FR = new TalonSRX(2);
+    TalonSRX BR = new TalonSRX(3);
+    TalonSRX lift = new TalonSRX(4);
+    Joystick joystick = new Joystick(0);
+    float pulseWidth;
+    int firstStage = 0;
+    int secondStage = 0;
+    int thirdStage = 0;
+    
+
+
+    public void robotInit() {
+   //check last two params
+        lift.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Relative, 0, 0);
+        lift.getSensorCollection().setPulseWidthPosition(0, 0);
+        pulseWidth = 0;
+    }
+
+    public void autonomousInit() {
+
+    }
+
+    public void autonomousPeriodic() {
+
+    }
+
+    public void teleopInit() {
+    }
+
+    public void teleopPeriodic() {
+        pulseWidth = lift.getSensorCollection().getPulseWidthPosition();
+        smartDashboard.putNumber("Number", pulseWidth);
+        if(joystick.getRawButton(X))
+        {
+            if(pulseWidth > thirdStage) 
+            {   
+                lift.set(ControlMode.PercentOutput, -0.8);
+                if (pulseWidth > secondStage && pulseWidth < thirdStage)
+                {
+                    lift.set(ControlMode.PercentOutput, 0);
+                }
+            }
+
+            else if (pulseWidth < secondStage)
+            {
+                lift.set(ControlMode.PercentOutput, -0.8);
+                if (pulseWidth > secondStage && pulseWidth < thirdStage)
+                {
+                    lift.set(ControlMode.PercentOutput, 0);
+                }
+            }
+        }
+
+        if(joystick.getRawButton(Y))
+        {
+            lift.set(ControlMode.PercentOutput, 0.8);
+            if (pulseWidth > thirdStage)
+            {
+                lift.set(ControlMode.PercentOutput, 0);
+            }
+        }
+
+        if(joystick.getRawButton(A))
+        {
+            lift.set(ControlMode.PercentOutput, -0.8);
+            if (pulseWidth < 5)
+            {
+                lift.set(ControlMode.PercentOutput, 0);
+            }
+        }
+        
+    }
+}
