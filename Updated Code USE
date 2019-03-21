@@ -1,0 +1,293 @@
+// February 18, 2019, with very consistent vision code and more comments.
+package frc.robot;
+
+// Imports
+import edu.wpi.first.wpilibj.*;
+import edu.wpi.first.wpilibj.SerialPort;
+import com.ctre.phoenix.motorcontrol.ControlMode;
+import com.ctre.phoenix.motorcontrol.FeedbackDevice;
+import com.ctre.phoenix.motorcontrol.can.*;
+import edu.wpi.first.wpilibj.smartdashboard.*;
+import edu.wpi.first.cameraserver.CameraServer;
+
+public class Robot extends TimedRobot {
+  // Instantiation
+  SmartDashboard smartDashboard;
+  //Timer timer;
+  CameraServer camera;
+  Joystick driveStick = new Joystick(0);
+  Joystick mechStick = new Joystick(1);
+  // Tank Drive
+  TalonSRX FL = new TalonSRX(3);
+  TalonSRX BL = new TalonSRX(2);
+  TalonSRX FR = new TalonSRX(0);
+  TalonSRX BR = new TalonSRX(1);
+  // Mechs
+  TalonSRX ballMech = new TalonSRX(4);
+  TalonSRX lift = new TalonSRX(5);
+  TalonSRX extra = new TalonSRX(6); // Second motor for lift??
+  Servo leftServo = new Servo(0); // Disc
+  Servo rightServo = new Servo(1); // Disc
+  private String command;
+  //private boolean timerStarted = false;
+  private boolean connected = false;
+  private boolean waiting = false;
+  private double motorSpeed = 0;
+  private double multiplier = 1;
+  private double autoTurn = 0.05; // The vision constant. The side that needs to turn more will have this value added to its total power.
+  public static SerialPort serialPort;
+  double pulseWidth;
+  // The vision function, which is called in the teleopPeriodic function if 'Y' is pressed.
+  public void semiAuto() {
+   serialPort.writeString("I"); // Tells the Arduino that it is ready to receive information about the vision target.
+   // In the vision function, the robot will adjust itself left and right, but the driver will control the forward speed with the left stick.
+   command = "";
+   waiting = true;
+
+   while(waiting)
+   {
+     if (driveStick.getRawButton(10)) {
+       waiting = false;
+       DriverStation.reportWarning("Stopped Waiting", false);
+     }
+     /*
+     if (!timerStarted) {
+       timer.start();
+       timerStarted = true;
+     }
+     if (timer.get() > 1) {
+       waiting = false;
+     }
+     */
+     command = serialPort.readString(1); // Gets the position of the vision target (L, R, C, or X [no target found])
+     motorSpeed = (-driveStick.getRawAxis(1) / 3); // Both sides, no matter what position, get this variable for power based on the left stick's position.
+     // The strong side is the side of the robot that has to turn more. The weak side is the side of the robot that has to turn less.
+     // For example, if the vision target is on the left of the robot, the strong side is the right, and the weak side is the left.
+     double strongSide = motorSpeed + autoTurn; // The strong side gets the value above (motorSpeed) plus the autoTurn constant declared at the top of the program.
+     double weakSide = motorSpeed; // The weak side's power just gets the motorSpeed value (joystick value divided by three).
+
+     if (command.equals("R")) // If the vision target is to the right of the robot...
+     {
+       // Assing strongSide and weakSide to the left wheels and the right wheels respectively.
+       DriverStation.reportWarning(command, false);
+       FL.set(ControlMode.PercentOutput, -strongSide);
+       BL.set(ControlMode.PercentOutput, -strongSide);
+       FR.set(ControlMode.PercentOutput, -weakSide);
+       BR.set(ControlMode.PercentOutput, -weakSide);
+       //timer.stop();
+       //timerStarted = false;
+       waiting = false;
+     }
+     else if (command.equals("L")) // If the vision target is to the left of the robot...
+     {
+       // Assing strongSide and weakSide to the right wheels and the left wheels respectively.
+       DriverStation.reportWarning(command, false);
+       FL.set(ControlMode.PercentOutput, -weakSide);
+       BL.set(ControlMode.PercentOutput, -weakSide);
+       FR.set(ControlMode.PercentOutput, -strongSide);
+       BR.set(ControlMode.PercentOutput, -strongSide);
+       //timer.stop();
+       //timerStarted = false;
+       waiting = false;
+     }
+     else if (command.equals("C")) // If the vision target is centered with the robot...
+     {
+       // Assign weakSide (just the joystick value) to both sides; the robot will move straight.
+       DriverStation.reportWarning(command, false);
+       FL.set(ControlMode.PercentOutput, -weakSide);
+       BL.set(ControlMode.PercentOutput, -weakSide);
+       FR.set(ControlMode.PercentOutput, -weakSide);
+       BR.set(ControlMode.PercentOutput, -weakSide);
+       //timer.stop();
+       //timerStarted = false;
+       waiting = false;
+     }
+     else if (command.equals("X")) // If the vision target is not found...
+     {
+       // The robot will move forward and backward only, without any turning, based on the joystick value.
+       DriverStation.reportWarning(command, false);
+       FL.set(ControlMode.PercentOutput, driveStick.getRawAxis(1) / 2);
+       BL.set(ControlMode.PercentOutput, driveStick.getRawAxis(1) / 2);
+       FR.set(ControlMode.PercentOutput, driveStick.getRawAxis(1) / 2);
+       BR.set(ControlMode.PercentOutput, driveStick.getRawAxis(1) / 2);
+       //timer.stop();
+       //timerStarted = false;
+       waiting = false;
+     }
+   }
+ }
+  
+  public double calculateUnits(double distance, double diameter) {
+		double units = (distance / (diameter * Math.PI)) * 4096;
+		return units;
+  }
+  
+  @Override
+  public void robotInit() {
+    lift.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Absolute, 0, 0);
+    //Trying to connect to the Arduino in order to receive commands.
+    try
+   {
+     serialPort = new SerialPort(115200, SerialPort.Port.kMXP);
+     serialPort.setTimeout(0.8);
+     connected = true;
+   }
+   catch (Exception e)
+   {
+     DriverStation.getInstance();
+     DriverStation.reportWarning("Can't Connect to RioDiuno", false);
+   }
+   CameraServer.getInstance().startAutomaticCapture();
+  }
+
+  @Override
+  public void autonomousInit() {
+    roboInitialize();
+  }
+
+  @Override
+  public void autonomousPeriodic() { 
+    robotDrive();
+  }
+
+  @Override
+  public void teleopInit() {
+    roboInitialize();
+  }
+
+  public void roboInitialize() {
+    lift.getSensorCollection().setPulseWidthPosition(0,0);
+    leftServo.setAngle(80);
+    rightServo.setAngle(143);
+    pulseWidth = 0;
+    
+  } 
+
+  @Override
+  public void teleopPeriodic() {
+    robotDrive(); 
+  }
+
+  public void robotDrive() {
+    //CameraServer.getInstance().startAutomaticCapture();
+    pulseWidth = lift.getSensorCollection().getPulseWidthPosition();
+    smartDashboard.putNumber("Number", pulseWidth);
+    if (driveStick.getRawButton(4) && connected == true) { // If 'Y' is pressed...
+      // Calls the vision function.
+      semiAuto();
+    }
+
+    double mechValue = mechStick.getRawAxis(2);
+		double mechValue1 = mechStick.getRawAxis(3);
+ 
+    //Tank Drive
+    FL.setInverted(true);
+    BL.setInverted(true);
+    if (!driveStick.getRawButton(4) && !driveStick.getRawButton(3) && !driveStick.getRawButton(5)) {
+      //FR.set(ControlMode.PercentOutput, 0.1);
+      //BR.set(ControlMode.PercentOutput, 0.1);
+      //FL.set(ControlMode.PercentOutput, 0.1);
+      //BL.set(ControlMode.PercentOutput, 0.1);
+      FR.set(ControlMode.PercentOutput, Math.pow(driveStick.getRawAxis(5), 3) * multiplier); //* Math.abs(driveStick.getRawAxis(5)));
+      BR.set(ControlMode.PercentOutput, Math.pow(driveStick.getRawAxis(5), 3) * multiplier); //* Math.abs(driveStick.getRawAxis(5)));
+      FL.set(ControlMode.PercentOutput, Math.pow(driveStick.getRawAxis(1), 3) * multiplier); //* Math.abs(driveStick.getRawAxis(1)));
+      BL.set(ControlMode.PercentOutput, Math.pow(driveStick.getRawAxis(1), 3) * multiplier); //* Math.abs(driveStick.getRawAxis(1)));
+    }
+    if(driveStick.getRawButton(3))
+    {
+      FL.set(ControlMode.PercentOutput, driveStick.getRawAxis(1) / 2);
+       BL.set(ControlMode.PercentOutput, driveStick.getRawAxis(1) / 2);
+       FR.set(ControlMode.PercentOutput, driveStick.getRawAxis(1) / 2);
+       BR.set(ControlMode.PercentOutput, driveStick.getRawAxis(1) / 2);
+    }
+    if (driveStick.getRawButton(5)) {
+      FR.set(ControlMode.PercentOutput, Math.pow(driveStick.getRawAxis(5), 3)); 
+      BR.set(ControlMode.PercentOutput, Math.pow(driveStick.getRawAxis(5), 3));
+      FL.set(ControlMode.PercentOutput, Math.pow(driveStick.getRawAxis(1), 3));
+      BL.set(ControlMode.PercentOutput, Math.pow(driveStick.getRawAxis(1), 3));
+    }
+    if (driveStick.getRawButton(6)) {
+      smartDashboard.delete("camera");
+    }
+    //Servo code
+    //Right is 1, Left is 0.
+    while (mechStick.getRawButton(6)) {
+      leftServo.setAngle(80);
+      rightServo.setAngle(143);
+    }
+    while (mechStick.getRawButton(5)) {
+      leftServo.setAngle(180);
+      rightServo.setAngle(43);
+    }
+
+    //Ball Mech
+
+    if (mechValue1 > 0) {
+      ballMech.set(ControlMode.PercentOutput, (0.5)*(mechValue1*mechValue1));
+      
+      }
+  
+      else {
+        ballMech.set(ControlMode.PercentOutput, 0);
+      }
+      if (mechValue > 0) {
+      ballMech.set(ControlMode.PercentOutput, (0.5)*(-mechValue*mechValue));
+      mechValue1 = mechStick.getRawAxis(3);
+      }
+  
+    
+    //while((mechStick.getRawAxis(1) > 0.1) || (mechStick.getRawAxis(1) < -0.1))
+    //{
+     // lift.set(ControlMode.PercentOutput, mechStick.getRawAxis(1));
+    //}
+    //if (pulseWidth < calculateUnits(5, 0.3)) {
+      // }
+
+      //Greyt Lift Mech
+      /*
+      if ((mechStick.getRawAxis(1)) > 0 && (mechStick.getRawAxis(1) <= 0.1) || (mechStick.getRawAxis(1)) < 0 && (mechStick.getRawAxis(1) >= -0.1))
+      {
+        lift.set(ControlMode.PercentOutput, 0);
+      }
+
+      else
+      {
+        lift.set(ControlMode.PercentOutput, mechStick.getRawAxis(1));
+      }    
+      */
+      //Ryan's lift
+      /*
+      if ((mechStick.getRawAxis(1)) > 0 && (mechStick.getRawAxis(1) <= 0.1) || (mechStick.getRawAxis(1)) < 0 && (mechStick.getRawAxis(1) >= -0.1))
+      {
+        extra.set(ControlMode.PercentOutput, 0);
+      }
+
+      else
+      {
+        extra.set(ControlMode.PercentOutput, mechStick.getRawAxis(1));
+      }
+
+      if ((mechStick.getRawAxis(5)) > 0 && (mechStick.getRawAxis(5) <= 0.1) || (mechStick.getRawAxis(5)) < 0 && (mechStick.getRawAxis(5) >= -0.1))
+      {
+        lift.set(ControlMode.PercentOutput, 0);
+      }
+
+      else
+      {
+        lift.set(ControlMode.PercentOutput, -(mechStick.getRawAxis(5)));
+      }
+      */
+      extra.set(ControlMode.PercentOutput, mechStick.getRawAxis(1));
+      lift.set(ControlMode.PercentOutput, -(mechStick.getRawAxis(5)));
+
+      
+      //END OF TELEOP
+   
+  }
+
+  @Override
+  public void testPeriodic() {
+  }
+
+  
+}
