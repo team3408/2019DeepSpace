@@ -161,8 +161,8 @@ public class Robot extends TimedRobot {
 
   public void roboInitialize() {    
     lift.getSensorCollection().setPulseWidthPosition(0,0);
-    leftServo.setAngle(80);
-    rightServo.setAngle(143);
+    leftServo.setAngle(85);
+    rightServo.setAngle(90);
     pulseWidth = 0;
     
   } 
@@ -183,7 +183,7 @@ public class Robot extends TimedRobot {
 
     if ((mechStick.getRawAxis(1)) > 0 && (mechStick.getRawAxis(1) <= 0.15) || (mechStick.getRawAxis(1)) < 0 && (mechStick.getRawAxis(1) >= -0.15))
     {
-      lift.set(ControlMode.PercentOutput, -0.05);
+      lift.set(ControlMode.PercentOutput, -0.08);
     }
 
     else
@@ -239,14 +239,15 @@ public class Robot extends TimedRobot {
     }
 
     //Servo code
-    //Right is 1, Left is 0.
+    //Right is 1, Left is 0.  
+    //143,80 for L brackets
     while (mechStick.getRawButton(6)) {
-      leftServo.setAngle(80);
-      rightServo.setAngle(143);
+      leftServo.setAngle(85);
+      rightServo.setAngle(90);
     }
     while (mechStick.getRawButton(5)) {
       leftServo.setAngle(180);
-      rightServo.setAngle(43);
+      rightServo.setAngle(0);
     }
 
     //Ball Mech
