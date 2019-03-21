@@ -173,7 +173,6 @@ public class Robot extends TimedRobot {
   }
 
   public void robotDrive() {
-    lift.setInverted(true);
 
     ///////////////////////////////////////////////
     ///////////////////////////////////////////////
@@ -181,12 +180,21 @@ public class Robot extends TimedRobot {
     // Start of Limit Switch Code
 
     double output = mechStick.getRawAxis(1);
+
+    if ((mechStick.getRawAxis(1)) > 0 && (mechStick.getRawAxis(1) <= 0.15) || (mechStick.getRawAxis(1)) < 0 && (mechStick.getRawAxis(1) >= -0.15))
+    {
+      lift.set(ControlMode.PercentOutput, -0.05);
+    }
+
+    else
+    {
+      lift.set(ControlMode.PercentOutput, output);
+    }    
     if (bottomLimitSwitch.get()) {
         output = Math.max(output, 0);
     } else if (topLimitSwitch.get()) {
         output = Math.min(output, 0);
     }
-    lift.set(ControlMode.PercentOutput, output);
 
     // End of Limit Switch Code
 
@@ -194,8 +202,7 @@ public class Robot extends TimedRobot {
     ///////////////////////////////////////////////
 
     //CameraServer.getInstance().startAutomaticCapture();
-    pulseWidth = lift.getSensorCollection().getPulseWidthPosition();
-    smartDashboard.putNumber("Number", pulseWidth);
+    
     if (driveStick.getRawButton(4) && connected == true) { // If 'Y' is pressed...
       // Calls the vision function.
       semiAuto();
@@ -230,9 +237,7 @@ public class Robot extends TimedRobot {
       FL.set(ControlMode.PercentOutput, Math.pow(driveStick.getRawAxis(1), 3));
       BL.set(ControlMode.PercentOutput, Math.pow(driveStick.getRawAxis(1), 3));
     }
-    if (driveStick.getRawButton(6)) {
-      smartDashboard.delete("camera");
-    }
+
     //Servo code
     //Right is 1, Left is 0.
     while (mechStick.getRawButton(6)) {
