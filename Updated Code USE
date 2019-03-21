@@ -1,4 +1,6 @@
-// February 18, 2019, with very consistent vision code and more comments.
+//Competition Code
+// - Working on encoders or limit switches
+// - Make sure to reconfigure Pixy settings.
 package frc.robot;
 
 // Imports
@@ -12,6 +14,8 @@ import edu.wpi.first.cameraserver.CameraServer;
 
 public class Robot extends TimedRobot {
   // Instantiation
+  DigitalInput bottomLimitSwitch = new DigitalInput(2);
+  DigitalInput topLimitSwitch = new DigitalInput(3);
   SmartDashboard smartDashboard;
   //Timer timer;
   CameraServer camera;
@@ -155,7 +159,7 @@ public class Robot extends TimedRobot {
     roboInitialize();
   }
 
-  public void roboInitialize() {
+  public void roboInitialize() {    
     lift.getSensorCollection().setPulseWidthPosition(0,0);
     leftServo.setAngle(80);
     rightServo.setAngle(143);
@@ -169,6 +173,26 @@ public class Robot extends TimedRobot {
   }
 
   public void robotDrive() {
+    lift.setInverted(true);
+
+    ///////////////////////////////////////////////
+    ///////////////////////////////////////////////
+
+    // Start of Limit Switch Code
+
+    double output = mechStick.getRawAxis(1);
+    if (bottomLimitSwitch.get()) {
+        output = Math.max(output, 0);
+    } else if (topLimitSwitch.get()) {
+        output = Math.min(output, 0);
+    }
+    lift.set(ControlMode.PercentOutput, output);
+
+    // End of Limit Switch Code
+
+    ///////////////////////////////////////////////
+    ///////////////////////////////////////////////
+
     //CameraServer.getInstance().startAutomaticCapture();
     pulseWidth = lift.getSensorCollection().getPulseWidthPosition();
     smartDashboard.putNumber("Number", pulseWidth);
@@ -178,7 +202,7 @@ public class Robot extends TimedRobot {
     }
 
     double mechValue = mechStick.getRawAxis(2);
-		double mechValue1 = mechStick.getRawAxis(3);
+	double mechValue1 = mechStick.getRawAxis(3);
  
     //Tank Drive
     FL.setInverted(true);
@@ -234,54 +258,6 @@ public class Robot extends TimedRobot {
       ballMech.set(ControlMode.PercentOutput, (0.5)*(-mechValue*mechValue));
       mechValue1 = mechStick.getRawAxis(3);
       }
-  
-    
-    //while((mechStick.getRawAxis(1) > 0.1) || (mechStick.getRawAxis(1) < -0.1))
-    //{
-     // lift.set(ControlMode.PercentOutput, mechStick.getRawAxis(1));
-    //}
-    //if (pulseWidth < calculateUnits(5, 0.3)) {
-      // }
-
-      //Greyt Lift Mech
-      /*
-      if ((mechStick.getRawAxis(1)) > 0 && (mechStick.getRawAxis(1) <= 0.1) || (mechStick.getRawAxis(1)) < 0 && (mechStick.getRawAxis(1) >= -0.1))
-      {
-        lift.set(ControlMode.PercentOutput, 0);
-      }
-
-      else
-      {
-        lift.set(ControlMode.PercentOutput, mechStick.getRawAxis(1));
-      }    
-      */
-      //Ryan's lift
-      /*
-      if ((mechStick.getRawAxis(1)) > 0 && (mechStick.getRawAxis(1) <= 0.1) || (mechStick.getRawAxis(1)) < 0 && (mechStick.getRawAxis(1) >= -0.1))
-      {
-        extra.set(ControlMode.PercentOutput, 0);
-      }
-
-      else
-      {
-        extra.set(ControlMode.PercentOutput, mechStick.getRawAxis(1));
-      }
-
-      if ((mechStick.getRawAxis(5)) > 0 && (mechStick.getRawAxis(5) <= 0.1) || (mechStick.getRawAxis(5)) < 0 && (mechStick.getRawAxis(5) >= -0.1))
-      {
-        lift.set(ControlMode.PercentOutput, 0);
-      }
-
-      else
-      {
-        lift.set(ControlMode.PercentOutput, -(mechStick.getRawAxis(5)));
-      }
-      */
-      extra.set(ControlMode.PercentOutput, mechStick.getRawAxis(1));
-      lift.set(ControlMode.PercentOutput, -(mechStick.getRawAxis(5)));
-
-      
-      //END OF TELEOP
    
   }
 
