@@ -14,13 +14,13 @@ import edu.wpi.first.cameraserver.CameraServer;
 
 public class Robot extends TimedRobot {
   // Instantiation
-  DigitalInput bottomLimitSwitch = new DigitalInput(2);
-  DigitalInput topLimitSwitch = new DigitalInput(3);
+  DigitalInput bottomLimitSwitch = new DigitalInput(0);
+  DigitalInput topLimitSwitch = new DigitalInput(1);
   SmartDashboard smartDashboard;
   //Timer timer;
   CameraServer camera;
-  Joystick driveStick = new Joystick(0);
-  Joystick mechStick = new Joystick(1);
+  Joystick driveStick = new Joystick(1);
+  Joystick mechStick = new Joystick(0);
   // Tank Drive
   TalonSRX FL = new TalonSRX(3);
   TalonSRX BL = new TalonSRX(2);
